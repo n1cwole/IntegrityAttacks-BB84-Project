@@ -1,21 +1,10 @@
-# @title
+#I changed the import statements to make sure that the code works in vscode.
 import warnings
 warnings.filterwarnings('ignore')
 
-
-try:
-    import cirq
-except ImportError:
-    print('installing cirq...')
-    !pip install cirq --quiet
-    import cirq
-    print('installed cirq.')
-
-
-#!git clone https://github.com/the-codingschool/bb84.git
-#from bb84.bb84 import BB84
-
+import cirq
 from cirq import NamedQubit, Simulator, Circuit
+
 
 class BB84:
 
@@ -400,4 +389,29 @@ class BB84:
       self.bit_num += 1
       print('='*75, end='\n\n')
 
+#I had to change the import statements for matplotlib to actually make it work.
+import matplotlib
+matplotlib.use('TkAgg')
 import matplotlib.pyplot as plt
+
+def binary_labels(num_qubits):
+    """Generates a list of binary labels for a given number of qubits."""
+    return [bin(x)[2:].zfill(num_qubits) for x in range(2**num_qubits)]
+
+"""
+#For the following code, I created a bell state circuit using cirq. I then simulated it. I then troubleshooted matplotlib to ensure that it works and creates a new window with the plots.
+
+
+qubit = cirq.NamedQubit.range(2, prefix = "q")
+circuit = cirq.Circuit()
+circuit.append(cirq.H(qubit[0]))
+circuit.append(cirq.CNOT(qubit[0], qubit[1]))
+circuit.append(cirq.M(qubit, key = "result"))
+print(circuit)
+simulator = cirq.Simulator()
+result = simulator.run(circuit, repetitions=100)
+print(result)
+fig, ax = plt.subplots()
+hist = cirq.plot_state_histogram(result, ax, title = "bell states", xlabel = "states", ylabel = "occurrences", tick_label= binary_labels(2))
+plt.show()
+"""
