@@ -398,10 +398,10 @@ def binary_labels(num_qubits):
     """Generates a list of binary labels for a given number of qubits."""
     return [bin(x)[2:].zfill(num_qubits) for x in range(2**num_qubits)]
 
-"""
+
 #For the following code, I created a bell state circuit using cirq. I then simulated it. I then troubleshooted matplotlib to ensure that it works and creates a new window with the plots.
 
-
+"""
 qubit = cirq.NamedQubit.range(2, prefix = "q")
 circuit = cirq.Circuit()
 circuit.append(cirq.H(qubit[0]))
