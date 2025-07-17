@@ -5,7 +5,17 @@ warnings.filterwarnings('ignore')
 import cirq
 from cirq import NamedQubit, Simulator, Circuit
 
+#I had to change the import statements for matplotlib to actually make it work.
+import matplotlib
+matplotlib.use('TkAgg')
+import matplotlib.pyplot as plt
+
+def binary_labels(num_qubits):
+    """Generates a list of binary labels for a given number of qubits."""
+    return [bin(x)[2:].zfill(num_qubits) for x in range(2**num_qubits)]
+
 import random
+import numpy as np
 class BB84:
 
     """
@@ -424,17 +434,7 @@ class BB84:
         self.eve_information_gain += 1
       print('='*75, end='\n\n')
 
-#I had to change the import statements for matplotlib to actually make it work.
-import matplotlib
-matplotlib.use('TkAgg')
-import matplotlib.pyplot as plt
 
-def binary_labels(num_qubits):
-    """Generates a list of binary labels for a given number of qubits."""
-    return [bin(x)[2:].zfill(num_qubits) for x in range(2**num_qubits)]
-
-import random
-import numpy as np
 
 
 my_protocol = BB84()
