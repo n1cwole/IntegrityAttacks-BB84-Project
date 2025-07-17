@@ -176,6 +176,15 @@ class BB84:
       self.errors = 0
       self.no_errors = 0
 
+    #measures how many errors when both alice and bob compare bits and both do hadamard:
+      self.errors_with_H = 0
+      self.no_errors_with_H = 0
+    #measures how many errors when both alice and bob compare bits and neither do hadamard:
+      self.errors_no_H = 0
+      self.no_errors_no_H = 0
+
+    #measures the information gain for Eve: when eve's bit matches alice's bit.
+      self.eve_information_gain = 0
 
     def phase_1_circuit(self):
 
@@ -366,12 +375,24 @@ class BB84:
               print('\033[47m\033[1mEve (to herself)\033[0m\033[0m: Mwuhaha, I\'ve gone undetected.')
               #when these conditions are met (alice and bob think bit is secure) increment no_errors by 1.
               self.no_errors += 1
+              #when they both apply hadamard, and no bit error, increment no_errors_with_H by 1.
+              if self.does_alice_apply_H == 'yes' and self.does_bob_apply_H == 'yes':
+                self.no_errors_with_H += 1
+              #when they both do not apply hadamard, and not bit error, increment no_errors_no_H by 1.
+              if self.does_alice_apply_H == 'no' and self.does_bob_apply_H == 'no':
+                self.no_errors_no_H += 1
           else:
             print('\033[91m\033[1mAlice and Bob: Our bits are different, so Increase the bit error rate. Let\'s count the bit error rate!\033[0m\033[0m')
             #commented out self.restart() to prevent the protocol from restarting after an error. I want to keep track of each error detected, not reset everything.
             #self.restart()
             #when these conditions are met (alice and bob think bit is not secure) increment errors by 1.
             self.errors += 1
+            #when they both apply hadamard, and bit error, increment errors_with_H by 1.
+            if self.does_alice_apply_H == 'yes' and self.does_bob_apply_H == 'yes':
+              self.errors_with_H += 1
+            #when they both do not apply hadamard, and bit error, increment errors_no_H by 1.
+            if self.does_alice_apply_H == 'no' and self.does_bob_apply_H == 'no':
+              self.errors_no_H += 1
             print(self.errors, 'errors so far.')
 
         else:
@@ -399,6 +420,8 @@ class BB84:
       print('\nThe circuit used this round:', bb84_circuit)
 
       self.bit_num += 1
+      if self.eve_bit == self.alice_bit:
+        self.eve_information_gain += 1
       print('='*75, end='\n\n')
 
 #I had to change the import statements for matplotlib to actually make it work.
@@ -496,7 +519,8 @@ my_protocol.eve_intercept_circuit = circuit
 #no_errors will increase by 1 if the bits are the same, bits are compared, and if gate application choices are the same.
 #If gate applications are different, then no value is added to any variable.
 #If bits are not compared, then no value is added to any variable.
-for i in range(1000):
+iterations = 1000
+for i in range(iterations):
     yorn = []
     bit = random.choice([0, 1])
     for i in range(3):
@@ -507,26 +531,88 @@ for i in range(1000):
 #saving results
 errors = my_protocol.errors
 no_errors = my_protocol.no_errors
+errors_with_H = my_protocol.errors_with_H
+no_errors_with_H = my_protocol.no_errors_with_H
+errors_no_H = my_protocol.errors_no_H
+no_errors_no_H = my_protocol.no_errors_no_H
+information_gain = (my_protocol.eve_information_gain/iterations)*100
 print(f'Total errors: {errors}, Total no errors: {no_errors}')
+print(f'Total errors both hadamard: {errors_with_H}, Total no errors both hadamard: {no_errors_with_H}')
+print(f'Total errors no hadamard: {errors_no_H}, Total no errors no hadamard: {no_errors_no_H}')
+print(f"Eve information gain: {information_gain:.2f}")
 
-#plotting bar chart on matplotlib.
+
+#plotting bar chart on matplotlib for total errors and no errors.
 catagories = ['Errors', 'No Errors']
 values = [errors, no_errors]
-# Create the bar chart
-plt.figure(figsize=(6, 4)) 
-bars = plt.bar(catagories, values, color=['salmon', 'lightgreen']) # Choose colors
 
-# Add labels and title
+plt.figure(figsize=(6, 4)) 
+bars = plt.bar(catagories, values, color=['salmon', 'lightgreen'])
+
 plt.xlabel('Outcome')
-plt.ylabel('Occurrences')
-plt.title('Occurrences of Errors and Non-Errors in CNOT Probe Simulation')
+plt.ylabel('Number of errors and non-errors')
+plt.title('Bob error rate in CNOT Probe Simulation')
 plt.ylim(0, max(values) * 1.1) 
 
-# Add the actual count values on top of the bars
 for bar in bars:
     yval = bar.get_height()
-    plt.text(bar.get_x() + bar.get_width()/2, yval + 5, int(yval), ha='center', va='bottom')
+    plt.text(bar.get_x() + bar.get_width()/2, yval + 1, int(yval), ha='center', va='bottom')
 
-# Show the plot
-plt.grid(axis='y', linestyle='--', alpha=0.7) # Add a subtle grid
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+plt.show()
+
+
+#plotting bar chart on matplotlib for total errors and no errors when both alice and bob apply hadamard.
+catagories = ['Errors', 'No Errors']
+values = [errors_with_H,no_errors_with_H]
+
+plt.figure(figsize=(6, 4)) 
+bars = plt.bar(catagories, values, color=['salmon', 'lightgreen'])
+
+plt.xlabel('Outcome')
+plt.ylabel('Number of errors and non-errors')
+plt.title('Bob error rate when alice and bob both apply hadamard')
+plt.ylim(0, max(values) * 1.1) 
+
+for bar in bars:
+    yval = bar.get_height()
+    plt.text(bar.get_x() + bar.get_width()/2, yval + 1, int(yval), ha='center', va='bottom')
+
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+plt.show()
+
+
+#plotting bar chart on matplotlib for total errors and no errors when both alice and bob do not apply hadamard.
+catagories = ['Errors', 'No Errors']
+values = [errors_no_H, no_errors_no_H]
+
+plt.figure(figsize=(6, 4)) 
+bars = plt.bar(catagories, values, color=['salmon', 'lightgreen'])
+
+plt.xlabel('Outcome')
+plt.ylabel('Number of errors and non-errors')
+plt.title('Bob error rate when alice and bob both do not apply hadamard')
+plt.ylim(0, max(values) * 1.1) 
+
+for bar in bars:
+    yval = bar.get_height()
+    plt.text(bar.get_x() + bar.get_width()/2, yval + 1, int(yval), ha='center', va='bottom')
+
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+plt.show()
+
+#plot percentages for eve information gain, eve information gain, and eve coverage
+catagories = ['Bob Error Rate', 'Eve Accuracy', 'Eve Coverage']
+values = [errors/(errors+no_errors)*100, information_gain, 100]
+plt.figure(figsize=(6, 4))
+bars = plt.bar(catagories, values, color=['red', 'green', 'blue'])
+
+plt.xlabel('Outcome')
+plt.ylabel('Percentage')
+plt.title('CNOT Probe Attack Metrics on BB84')
+plt.ylim(0, 110)
+for bar in bars:
+    yval = bar.get_height()
+    plt.text(bar.get_x() + bar.get_width()/2, yval + 0.02, f'{yval:.2f}', ha='center', va='bottom')
+plt.grid(axis='y', linestyle='--', alpha=0.7)
 plt.show()
