@@ -427,7 +427,7 @@ class BB84:
         print('\033[47m\033[1mEve (to herself)\033[0m\033[0m: My key is now:', self.eve_key)
 
 
-      print('\nThe circuit used this round:', bb84_circuit)
+      print(bb84_circuit)
 
       self.bit_num += 1
       if self.eve_bit == self.alice_bit:
@@ -507,7 +507,7 @@ my_protocol.bob_receive_H_circuit = circuit
 ancilla = cirq.NamedQubit("ancilla")
 circuit = cirq.Circuit()
 circuit.append(cirq.CNOT(my_protocol.qubit, ancilla))  # CNOT gate to probe the qubit
-circuit.append(cirq.measure(my_protocol.qubit, key='eve'))
+circuit.append(cirq.measure(ancilla, key='eve'))
 my_protocol.eve_intercept_circuit = circuit
 
 
