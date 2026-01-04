@@ -7,16 +7,27 @@
 This project provides a comprehensive simulation and analysis of the BB84 Measurment Based Quantum Key Distribution (QKD) protocol's vulnerability to various measurement-based eavesdropping strategies. By simulating different individual attacks, we quantify the Quantum Bit Error Rate (QBER) as well as other metrics to determine which methods most effectively compromise key security without detection.
 
 The simulation evaluates the susceptibility of the BB84 protocol against four distinct individual measurement attacks:
+
 Intercept-Resend: The most basic attack where Eve measures the qubits and sends a new state to Bob.
+
 Photon Number Splitting (PNS): Exploiting multi-photon pulses to gain information without disturbing the signal.
+
 CNOT Probe: Using an auxiliary qubit and a CNOT gate to entangle Eve's system with the quantum channel.
+
 CZ Probe: Utilizing Controlled-Z gates to induce phase-shift errors for information extraction.
 
 ### Tech Stack
 
 Python 3.11
 
-Libraries utilized: Numpy, Cirq, Matplotlib
+Libraries utilized: 
+
+Numpy
+
+Cirq
+
+Matplotlib
+
 Documentation: LaTeX
 
 ### Key Findings:
