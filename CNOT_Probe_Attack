@@ -128,7 +128,7 @@ class BB84:
       print('bob bit: ', self.bob_bit)
       
 Simulation = BB84()
-iterations = 2000
+iterations = 1000
 for i in range(iterations):
   Simulation.run_protocol()
 
