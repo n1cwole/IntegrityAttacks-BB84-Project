@@ -1,6 +1,6 @@
-# Project title: "Quantum Eavesdropper Detection: Evaluating the Threat Landscape of BB84 Attacks"
+## Project title: "Quantum Eavesdropper Detection: Evaluating the Threat Landscape of BB84 Attacks"
 ---
-> ## 📄[**Read the Full Research Paper (PDF)**](https://drive.google.com/file/d/1-41F5pUfaZcrjvg3Cv4dygVaavt6pIsn/view?usp=drive_link)
+> # 📄[**Read the Full Research Paper (PDF)**](https://drive.google.com/file/d/1-41F5pUfaZcrjvg3Cv4dygVaavt6pIsn/view?usp=drive_link)
 ---
 
 ### Project Overview:
