@@ -1,10 +1,10 @@
 # Project title: "Quantum Eavesdropper Detection: Evaluating the Threat Landscape of BB84 Attacks"
 ---
-> ## **📄 Read the Full Research Paper: https://drive.google.com/file/d/1-41F5pUfaZcrjvg3Cv4dygVaavt6pIsn/view?usp=drive_link**
+> ## 📄[**Read the Full Research Paper (PDF)**](https://drive.google.com/file/d/1-41F5pUfaZcrjvg3Cv4dygVaavt6pIsn/view?usp=drive_link)
 ---
 
 ### Project Overview:
-This project provides a comprehensive simulation and analysis of the BB84 Measurment Based Quantum Key Distribution (QKD) protocol's vulnerability to various measurement-based eavesdropping strategies. By simulating different individual attacks, we quantify the Quantum Bit Error Rate (QBER) as well as other metrics to determine which methods most effectively compromise key security without detection.
+This project provides a comprehensive simulation and analysis of the BB84 Measurment-Based Quantum Key Distribution (QKD) protocol's vulnerability to various measurement-based eavesdropping strategies. By simulating different individual attacks, we quantify the Quantum Bit Error Rate (QBER) as well as other metrics to determine which methods most effectively compromise key security without detection.
 
 The simulation evaluates the susceptibility of the BB84 protocol against four distinct individual measurement attacks:
 
