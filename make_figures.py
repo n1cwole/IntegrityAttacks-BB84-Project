@@ -88,26 +88,71 @@ plt.close()
 
 
 # FIGURE D: F_qnd sweep 
+# Figure D: F_qnd effect — isolated physics vs adaptive response
+
+with open('fqnd_isolated.json') as f:
+    iso = json.load(f)
+
 fqnd_values = data['fqnd_sweep']['fqnd_values']
-hyb_fqnd = data['fqnd_sweep']['hybrid']
+hybrid = data['fqnd_sweep']['hybrid']
 
-qber_x = safe([s['qber_x'] for s in hyb_fqnd])
-qber_z = safe([s['qber_z'] for s in hyb_fqnd])
-theta_used = safe([s['mean_theta_used'] for s in hyb_fqnd])
+qber_z_fqnd = [s['qber_z'] for s in hybrid]
+qber_x_fqnd = [s['qber_x'] for s in hybrid]
+theta_fqnd = [s['mean_theta_used'] for s in hybrid]
 
-plt.figure(figsize=(7, 5))
-plt.plot(fqnd_values, qber_x, marker='s', label='QBER X')
-plt.plot(fqnd_values, qber_z, marker='o', label='QBER Z')
-plt.plot(fqnd_values, theta_used, marker='^', label='Mean θ')
 
-plt.gca().invert_xaxis()
-plt.xlabel('F_qnd')
-plt.ylabel('Value')
-plt.title('Hybrid Behavior under QND Imperfection')
-plt.legend()
-plt.grid(alpha=0.4)
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(13, 5))
+
+
+# left
+ax1.plot(iso['fqnd_values'], iso['qber_z'],
+         marker='o', color='royalblue', label='QBER_Z')
+
+ax1.plot(iso['fqnd_values'], iso['qber_x'],
+         marker='s', color='salmon', label='QBER_X')
+
+ax1.invert_xaxis()
+ax1.set_xlabel('QND Measurement Fidelity ($F_{qnd}$)')
+ax1.set_ylabel('QBER')
+ax1.set_title(
+    'Isolated Effect (No Probe Adaptation)\n'
+    'Basis asymmetry is intrinsic to channel model'
+)
+ax1.legend()
+ax1.grid(axis='y', linestyle='--', alpha=0.6)
+
+
+# right
+ax2.plot(fqnd_values, qber_x_fqnd,
+         marker='s', color='salmon', label='QBER_X')
+
+ax2.plot(fqnd_values, qber_z_fqnd,
+         marker='o', color='royalblue', label='QBER_Z')
+
+ax2.set_xlabel('QND Measurement Fidelity ($F_{qnd}$)')
+ax2.set_ylabel('QBER')
+ax2.invert_xaxis()
+
+ax2b = ax2.twinx()
+ax2b.plot(fqnd_values, theta_fqnd,
+          marker='^', color='purple', linestyle='--', label='Mean θ used')
+
+ax2b.set_ylabel('Probe Angle θ', color='purple')
+
+ax2.set_title(
+    'Hybrid Adaptive Eve\n'
+    'Optimizer reduces θ as QBER budget is consumed'
+)
+
+lines1, labels1 = ax2.get_legend_handles_labels()
+lines2, labels2 = ax2b.get_legend_handles_labels()
+ax2.legend(lines1 + lines2, labels1 + labels2, loc='upper left', fontsize=9)
+
+ax2.grid(axis='y', linestyle='--', alpha=0.6)
+
+
 plt.tight_layout()
-plt.savefig(f'{OUT}/figD_fqnd.png', dpi=150)
+plt.savefig(f'{OUT}/figD_fqnd_basis_asymmetry.png', dpi=150)
 plt.close()
 
 
