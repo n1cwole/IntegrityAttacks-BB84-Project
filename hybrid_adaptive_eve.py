@@ -25,6 +25,8 @@ class HybridAdaptiveEve:
         self.F_mem = F_mem
         self.qber_budget = qber_budget
         self.lam = lam  # penalty weight in the cost function
+        self.theta_used_list = []
+        self.probe_count = 0
 
         if seed is not None:
             random.seed(seed)
@@ -141,6 +143,8 @@ class HybridAdaptiveEve:
             path = 'PROBE'
             theta_used = self._choose_theta()
             bob_bit, eve_bit = self._run_probe(theta_used, alice_bit, alice_basis, bob_basis)
+            self.theta_used_list.append(theta_used)
+            self.probe_count += 1
 
         if alice_basis == bob_basis:
             self.alice_key.append(alice_bit)
@@ -192,7 +196,10 @@ class HybridAdaptiveEve:
             'eve_acc_probe': eve_acc_probe,
             'coverage_pns': coverage_pns,
             'coverage_probe': coverage_probe,
-            'mean_theta_used': np.mean([t for t in self.theta_log if t is not None]) if any(t is not None for t in self.theta_log) else float('nan'),
+            'mean_theta_used': (
+                float(np.mean(self.theta_used_list))
+                if len(self.theta_used_list) > 0 else np.nan,
+            )
         }
 
 
