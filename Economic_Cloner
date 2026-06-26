@@ -1,0 +1,137 @@
+import warnings
+warnings.filterwarnings('ignore')
+
+import cirq
+from cirq import NamedQubit, Simulator, Circuit
+
+#I had to change the import statements for matplotlib to actually make it work.
+import matplotlib
+matplotlib.use('TkAgg')
+import matplotlib.pyplot as plt
+
+import random
+import numpy as np
+
+class BB84_CNOT_ENTANGLEMENT:
+    '''
+    A class to simulate the BB84 protocol with CNOT entanglement. This attack will specifically be using an optimal cloner from garcia patron's reserach. Hopefully this works.
+    '''
+    def __init__(self):
+        self.num_sent_qubits = 1000
+        self.qubits = cirq.NamedQubit.range(self.num_sent_qubits, prefix = "q")
+        self.alice_key = []
+        self.bob_key = []
+        self.alice_final_key = []
+        self.bob_final_key = []
+        self.eve_key = []
+
+        self.bob_H = []
+        self.alice_H = []
+
+        self.alice_circuit = cirq.Circuit()
+        self.bob_circuit = cirq.Circuit()
+        self.eve_circuit = cirq.Circuit()
+        self.final_circuit = cirq.Circuit()
+        self.simulator = cirq.Simulator()
+
+        self.error_rate = 0
+
+        self.theta = np.arccos(1 / np.sqrt(3)) / 2
+        self.eve_qubits = cirq.NamedQubit.range(self.num_sent_qubits, prefix = "e")
+
+        #declaring eve circuit on every data qubit for economic cloner
+        for i in range(self.num_sent_qubits):
+            #x gate to prepare
+            self.eve_circuit.append(cirq.rx(np.pi).on(self.qubits[i]) )
+            #ry controlled gate
+            self.eve_circuit.append(cirq.ry(2 * self.theta).on(self.eve_qubits[i]).controlled_by(self.qubits[i]))
+            #anti-CNOT gate
+            #self.eve_circuit.append(cirq.X(self.qubits[i]))
+            #self.eve_circuit.append(cirq.CNOT(self.qubits[i], self.eve_qubits[i]))
+            #self.eve_circuit.append(cirq.X(self.qubits[i]))
+            self.eve_circuit.append(cirq.X.on(self.eve_qubits[i]).controlled_by(self.qubits[i], control_values=[0]))
+            #opposite x gate to reverse
+            self.eve_circuit.append(cirq.rx(-np.pi).on(self.qubits[i]) )
+
+    def build_alice_circuit(self):
+            "method to build the circuit for Alice's qubits"
+            for i in range(self.num_sent_qubits):
+                self.alice_bit = random.choice([0, 1])
+                self.alice_key.append(self.alice_bit)
+                self.alice_basis = random.choice(['Z', 'X'])
+                if self.alice_basis == 'Z':
+                    self.alice_H.append("no")
+                    if self.alice_bit == 0:
+                        self.alice_circuit.append(cirq.I(self.qubits[i]))
+                    else:
+                        self.alice_circuit.append(cirq.X(self.qubits[i]))
+                    self.alice_circuit.append(cirq.I(self.qubits[i]))
+                if self.alice_basis == 'X':
+                    self.alice_H.append("yes")
+                    if self.alice_bit == 0:
+                        self.alice_circuit.append(cirq.I(self.qubits[i]))
+                    else:
+                        self.alice_circuit.append(cirq.X(self.qubits[i]))
+                    self.alice_circuit.append(cirq.H(self.qubits[i]))
+            
+            #print(self.alice_circuit)
+    def build_bob_circuit(self):
+            "method to build the circuit for Bob's qubits"
+            for i in range(self.num_sent_qubits):
+                self.bob_basis = random.choice(['Z', 'X'])
+                if self.bob_basis == 'Z':
+                    self.bob_H.append("no")
+                    self.bob_circuit.append(cirq.I(self.qubits[i]))
+                if self.bob_basis == 'X':
+                    self.bob_H.append("yes")
+                    self.bob_circuit.append(cirq.H(self.qubits[i]))
+                self.bob_circuit.append(cirq.measure(self.qubits[i], key=f"q{i}"))
+            #print(self.bob_circuit) 
+    def build_final_circuit(self):
+        "method to build the final circuit for the protocol"
+        self.final_circuit = cirq.Circuit()
+        self.final_circuit += self.alice_circuit
+        self.final_circuit += self.eve_circuit
+        self.final_circuit += self.bob_circuit
+        #print(self.final_circuit)
+    def measure_bob_bit(self):
+        "method to measure Bob's bit"
+        result = self.simulator.run(self.final_circuit)
+        #print(result)
+        for i in range(self.num_sent_qubits):
+            self.bob_bit = result.measurements[f"q{i}"][0][0]
+            self.bob_key.append(int(self.bob_bit))
+        #print(self.bob_key)
+        #print(self.alice_key)
+    def sifting(self):
+        for i in range(self.num_sent_qubits):
+            if self.alice_H[i] == self.bob_H[i]:
+                self.alice_final_key.append(self.alice_key[i])
+                self.bob_final_key.append(self.bob_key[i])
+        #print(self.alice_final_key)
+        #print(self.bob_final_key)
+    def compare_bits(self):
+        for i in range(len(self.alice_final_key)):
+            if self.alice_final_key[i] == self.bob_final_key[i]:
+                self.error_rate += 0
+            else:
+                self.error_rate += 1
+    
+                
+        
+                
+
+protocol = BB84_CNOT_ENTANGLEMENT()
+protocol.build_alice_circuit()
+protocol.build_bob_circuit()
+protocol.build_final_circuit()
+#print(protocol.bob_H)
+#print(protocol.alice_H)
+protocol.measure_bob_bit()
+protocol.sifting()
+
+protocol.compare_bits()
+print(protocol.error_rate)
+
+#print(protocol.eve_circuit)
+

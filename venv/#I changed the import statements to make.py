@@ -16,7 +16,6 @@ def binary_labels(num_qubits):
 
 import random
 import numpy as np
-
 class BB84:
 
     """
@@ -99,7 +98,6 @@ class BB84:
     ```
     """
 
-
     eve_intercept: str
     """Indicates if Eve intercepts the qubits ('yes' or 'no'). Should be set upon initialization or after calling `reset()`."""
 
@@ -131,15 +129,15 @@ class BB84:
     bit_num: int
     """Counter for the number of bits processed so far. <b>SHOULD NOT BE MODIFIED BY USER</b>."""
 
-
-    def __init__(self, eve_intercept = 'no'):
+    #eve is intercepting each qubit sent, so default for eve_intercept is yes.
+    def __init__(self, eve_intercept = 'yes'):
 
       """
       Initializes the BB84 protocol simulation with default or specified settings.
 
       Parameters:
           `eve_intercept` (str, optional): Determines if Eve will attempt to intercept the qubits ('yes' or 'no').
-                                         Defaults to 'no'.
+                                         Defaults to 'yes'.
 
       Example Usage:
       ```python
@@ -179,6 +177,23 @@ class BB84:
 
       self.bit_num = 1
 
+    #The 2 attributes added to this class are to count the number of errors and no errors.
+    #Errors will increase by 1 if the bits are different, bits are compared, and if gate application choices are the same.
+    #No errors will increase by 1 if the bits are the same, bits are compared, and if gate application choices are the same.
+    #If gate applications are different, then no value is added to any variable.
+    #If bits are not compared, then no value is added to any variable.
+      self.errors = 0
+      self.no_errors = 0
+
+    #measures how many errors when both alice and bob compare bits and both do hadamard:
+      self.errors_with_H = 0
+      self.no_errors_with_H = 0
+    #measures how many errors when both alice and bob compare bits and neither do hadamard:
+      self.errors_no_H = 0
+      self.no_errors_no_H = 0
+
+    #measures the information gain for Eve: when eve's bit matches alice's bit.
+      self.eve_information_gain = 0
 
     def phase_1_circuit(self):
 
@@ -338,82 +353,229 @@ class BB84:
 
       if self.eve_intercept:
         self.eve_bit = results.measurements.get('eve', [[None]])[0][0]
-
-      # Print results
-      print('\033[43m\033[1mATTEMPTED BIT', self.bit_num, '\033[0m\033[0m')
-
-      print('\n\033[32m\033[1mPHASE 1: SENDING\033[0m\033[0m\033[0m')
-      print('\033[47m\033[1mAlice (to herself)\033[0m\033[0m: I sent a', self.alice_bit, 'and', 'did not use' if self.does_alice_apply_H == 'no' else 'used', 'an H')
-
-      if self.eve_intercept == 'yes':
-        print('EVE INTERCEPTS!')
-        print('\033[47m\033[1mEve (to herself)\033[0m\033[0m: I measured a', self.eve_bit, 'and will now send the qubit to Bob')
-
-      print('\n\033[32m\033[1mPHASE 2: RECEIVING\033[0m\033[0m')
-      print('\033[47m\033[1mBob (to himself)\033[0m\033[0m: I', 'did not use' if self.does_bob_apply_H == 'no' else 'used', 'an H and measured a', self.bob_bit)
-
-      print('\n\033[32m\033[1mPHASE 3: COMPARING\033[0m\033[0m')
-      print('Alice and Bob are comparing choice of H\'s', 'and the bits themselves.' if compare_bits == 'yes' else 'but not the bits themselves.', '\n')
-      print('\033[47m\033[1mAlice\033[0m\033[0m: I', 'did not use' if self.does_alice_apply_H == 'no' else 'used', 'an H')
-      print('\033[47m\033[1mBob\033[0m\033[0m: I', 'did not use' if self.does_bob_apply_H == 'no' else 'used', 'an H')
-
-      print('')
       if compare_bits == 'yes':
-        print('\033[47m\033[1mAlice\033[0m\033[0m: I sent a', self.alice_bit)
-        print('\033[47m\033[1mBob\033[0m\033[0m: I measured a', self.bob_bit, '\n')
-
         if self.does_alice_apply_H == self.does_bob_apply_H:
           if self.alice_bit == self.bob_bit:
-            print('\033[47m\033[1mAlice and Bob\033[0m\033[0m: Our bits match, so it doesn\'t seem like Eve is intercepting.')
-
+            #print('\033[47m\033[1mAlice and Bob\033[0m\033[0m: Our bits match, so it doesn\'t seem like Eve is intercepting.')
             if self.eve_intercept == 'yes':
-              print('\033[47m\033[1mEve (to herself)\033[0m\033[0m: Mwuhaha, I\'ve gone undetected.')
-
+              #print('\033[47m\033[1mEve (to herself)\033[0m\033[0m: Mwuhaha, I\'ve gone undetected.')
+              #when these conditions are met (alice and bob think bit is secure) increment no_errors by 1.
+              self.no_errors += 1
+              #when they both apply hadamard, and no bit error, increment no_errors_with_H by 1.
+              if self.does_alice_apply_H == 'yes' and self.does_bob_apply_H == 'yes':
+                self.no_errors_with_H += 1
+              #when they both do not apply hadamard, and not bit error, increment no_errors_no_H by 1.
+              if self.does_alice_apply_H == 'no' and self.does_bob_apply_H == 'no':
+                self.no_errors_no_H += 1
           else:
-            print('\033[91m\033[1mAlice and Bob: Our bits are different, so Eve must have intercepted! Let\'s start over with new keys and a new quantum channel!\033[0m\033[0m')
-            self.restart()
-
-        else:
-          print('\033[47m\033[1mAlice and Bob\033[0m\033[0m: We made different choices, we should not use this bit.')
+            #print('\033[91m\033[1mAlice and Bob: Our bits are different, so Increase the bit error rate. Let\'s count the bit error rate!\033[0m\033[0m')
+            #commented out self.restart() to prevent the protocol from restarting after an error. I want to keep track of each error detected, not reset everything.
+            #self.restart()
+            #when these conditions are met (alice and bob think bit is not secure) increment errors by 1.
+            self.errors += 1
+            #when they both apply hadamard, and bit error, increment errors_with_H by 1.
+            if self.does_alice_apply_H == 'yes' and self.does_bob_apply_H == 'yes':
+              self.errors_with_H += 1
+            #when they both do not apply hadamard, and bit error, increment errors_no_H by 1.
+            if self.does_alice_apply_H == 'no' and self.does_bob_apply_H == 'no':
+              self.errors_no_H += 1
+            print(self.errors, 'errors so far.')
 
       else:
         if self.does_alice_apply_H == self.does_bob_apply_H:
-          print('\033[47m\033[1mAlice and Bob\033[0m\033[0m: Great, let\'s add this bit to our keys.')
           self.alice_key += [self.alice_bit]
           self.bob_key += [self.bob_bit]
 
           if self.eve_intercept:
             self.eve_key += [self.eve_bit]
-        else:
-          print('\033[47m\033[1mAlice and Bob\033[0m\033[0m: We made different choices, we should not use this bit.')
-
-      print('')
-      print('\033[47m\033[1mAlice (to herself)\033[0m\033[0m: My key is now', self.alice_key)
-      print('\033[47m\033[1mBob (to himself)\033[0m\033[0m: My key is now', self.bob_key)
-
-      if self.eve_intercept == 'yes':
-        print('\033[47m\033[1mEve (to herself)\033[0m\033[0m: My key is now:', self.eve_key)
 
 
-      print('\nThe circuit used this round:', bb84_circuit)
+      print(bb84_circuit)
 
       self.bit_num += 1
+      if self.eve_bit == self.alice_bit:
+        self.eve_information_gain += 1
       print('='*75, end='\n\n')
 
 
-#For the following code, I created a bell state circuit using cirq. I then simulated it. I then troubleshooted matplotlib to ensure that it works and creates a new window with the plots.
 
-"""
-qubit = cirq.NamedQubit.range(2, prefix = "q")
+
+my_protocol = BB84()
+
+
+# Qubit and Simulator
+#==================
+my_protocol.qubit = cirq.NamedQubit('q0')
+my_protocol.simulator = cirq.Simulator()
+
+
+# Alice's Circuits
+#==================
+# 0 with no H
 circuit = cirq.Circuit()
-circuit.append(cirq.H(qubit[0]))
-circuit.append(cirq.CNOT(qubit[0], qubit[1]))
-circuit.append(cirq.M(qubit, key = "result"))
-print(circuit)
-simulator = cirq.Simulator()
-result = simulator.run(circuit, repetitions=100)
-print(result)
-fig, ax = plt.subplots()
-hist = cirq.plot_state_histogram(result, ax, title = "bell states", xlabel = "states", ylabel = "occurrences", tick_label= binary_labels(2))
+
+circuit.append(cirq.I(my_protocol.qubit))
+circuit.append(cirq.I(my_protocol.qubit))
+
+my_protocol.alice_send_0_no_H_circuit = circuit
+
+
+# 1 with no H
+circuit = cirq.Circuit()
+
+circuit.append(cirq.X(my_protocol.qubit))
+circuit.append(cirq.I(my_protocol.qubit))
+
+my_protocol.alice_send_1_no_H_circuit = circuit
+
+
+# 0 with H
+circuit = cirq.Circuit()
+
+circuit.append(cirq.I(my_protocol.qubit))
+circuit.append(cirq.H(my_protocol.qubit))
+
+my_protocol.alice_send_0_H_circuit = circuit
+
+
+# 1 with H
+circuit = cirq.Circuit()
+
+circuit.append(cirq.X(my_protocol.qubit))
+circuit.append(cirq.H(my_protocol.qubit))
+
+my_protocol.alice_send_1_H_circuit = circuit
+
+
+# Bob's Circuits
+#==================
+# with no H
+circuit = cirq.Circuit()
+
+circuit.append(cirq.I(my_protocol.qubit))
+circuit.append(cirq.measure(my_protocol.qubit))
+
+my_protocol.bob_receive_no_H_circuit = circuit
+
+# with H
+circuit = cirq.Circuit()
+
+circuit.append(cirq.H(my_protocol.qubit))
+circuit.append(cirq.measure(my_protocol.qubit))
+
+my_protocol.bob_receive_H_circuit = circuit
+
+# Eve's Interception Circuit
+#==================
+ancilla = cirq.NamedQubit("ancilla")
+circuit = cirq.Circuit()
+circuit.append(cirq.CNOT(my_protocol.qubit, ancilla))  # CNOT gate to probe the qubit
+circuit.append(cirq.measure(ancilla, key='eve'))
+my_protocol.eve_intercept_circuit = circuit
+
+
+
+
+#simulate 1000 bits sent with random choices of bits, h gate applications, and comparebits.
+#Edited the class to ensure that errors and no errors are counted. (created new attributes)
+#errors will increase by 1 if the bits are different, bits are compared, and if gate application choices are the same.
+#no_errors will increase by 1 if the bits are the same, bits are compared, and if gate application choices are the same.
+#If gate applications are different, then no value is added to any variable.
+#If bits are not compared, then no value is added to any variable.
+iterations = 1000
+for i in range(iterations):
+    yorn = []
+    bit = random.choice([0, 1])
+    for i in range(3):
+         yorn.append(random.choice(["yes", "no"]))
+         print(yorn)
+    my_protocol.send_bit(bit, yorn[0], yorn[1], compare_bits = yorn[2])
+
+#saving results
+errors = my_protocol.errors
+no_errors = my_protocol.no_errors
+errors_with_H = my_protocol.errors_with_H
+no_errors_with_H = my_protocol.no_errors_with_H
+errors_no_H = my_protocol.errors_no_H
+no_errors_no_H = my_protocol.no_errors_no_H
+information_gain = (my_protocol.eve_information_gain/iterations)*100
+print(f'Total errors: {errors}, Total no errors: {no_errors}')
+print(f'Total errors both hadamard: {errors_with_H}, Total no errors both hadamard: {no_errors_with_H}')
+print(f'Total errors no hadamard: {errors_no_H}, Total no errors no hadamard: {no_errors_no_H}')
+print(f"Eve information gain: {information_gain:.2f}")
+
+
+#plotting bar chart on matplotlib for total errors and no errors.
+catagories = ['Errors', 'No Errors']
+values = [errors, no_errors]
+
+plt.figure(figsize=(6, 4)) 
+bars = plt.bar(catagories, values, color=['salmon', 'lightgreen'])
+
+plt.xlabel('Outcome')
+plt.ylabel('Number of errors and non-errors')
+plt.title('Bob error rate in CNOT Probe Simulation')
+plt.ylim(0, max(values) * 1.1) 
+
+for bar in bars:
+    yval = bar.get_height()
+    plt.text(bar.get_x() + bar.get_width()/2, yval + 1, int(yval), ha='center', va='bottom')
+
+plt.grid(axis='y', linestyle='--', alpha=0.7)
 plt.show()
-"""
+
+
+#plotting bar chart on matplotlib for total errors and no errors when both alice and bob apply hadamard.
+catagories = ['Errors', 'No Errors']
+values = [errors_with_H,no_errors_with_H]
+
+plt.figure(figsize=(6, 4)) 
+bars = plt.bar(catagories, values, color=['salmon', 'lightgreen'])
+
+plt.xlabel('Outcome')
+plt.ylabel('Number of errors and non-errors')
+plt.title('Bob error rate when alice and bob both apply hadamard')
+plt.ylim(0, max(values) * 1.1) 
+
+for bar in bars:
+    yval = bar.get_height()
+    plt.text(bar.get_x() + bar.get_width()/2, yval + 1, int(yval), ha='center', va='bottom')
+
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+plt.show()
+
+
+#plotting bar chart on matplotlib for total errors and no errors when both alice and bob do not apply hadamard.
+catagories = ['Errors', 'No Errors']
+values = [errors_no_H, no_errors_no_H]
+
+plt.figure(figsize=(6, 4)) 
+bars = plt.bar(catagories, values, color=['salmon', 'lightgreen'])
+
+plt.xlabel('Outcome')
+plt.ylabel('Number of errors and non-errors')
+plt.title('Bob error rate when alice and bob both do not apply hadamard')
+plt.ylim(0, max(values) * 1.1) 
+
+for bar in bars:
+    yval = bar.get_height()
+    plt.text(bar.get_x() + bar.get_width()/2, yval + 1, int(yval), ha='center', va='bottom')
+
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+plt.show()
+
+#plot percentages for eve information gain, eve information gain, and eve coverage
+catagories = ['Bob Error Rate', 'Eve Accuracy', 'Eve Coverage']
+values = [errors/(errors+no_errors)*100, information_gain, 100]
+plt.figure(figsize=(6, 4))
+bars = plt.bar(catagories, values, color=['red', 'green', 'blue'])
+
+plt.xlabel('Outcome')
+plt.ylabel('Percentage')
+plt.title('CNOT Probe Attack Metrics on BB84')
+plt.ylim(0, 110)
+for bar in bars:
+    yval = bar.get_height()
+    plt.text(bar.get_x() + bar.get_width()/2, yval + 0.02, f'{yval:.2f}', ha='center', va='bottom')
+plt.grid(axis='y', linestyle='--', alpha=0.7)
+plt.show()

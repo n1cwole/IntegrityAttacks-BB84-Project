@@ -1,0 +1,186 @@
+import warnings
+warnings.filterwarnings('ignore')
+
+import cirq
+from cirq import NamedQubit, Simulator, Circuit
+
+import matplotlib
+matplotlib.use('TkAgg') # Or 'Agg' if you don't need interactive plots
+import matplotlib.pyplot as plt
+
+import random
+import numpy as np
+
+class BB84_ClonerAttack:
+    '''
+    A class to simulate the BB84 protocol with an Economical Cloner attack.
+    '''
+    def __init__(self, num_sent_qubits=100000): # Increased default for better statistics
+        self.num_sent_qubits = num_sent_qubits
+        self.qubits = cirq.NamedQubit.range(num_sent_qubits, prefix="q") # Alice's data qubits
+        self.eve_qubits = cirq.NamedQubit.range(num_sent_qubits, prefix="e") # Eve's ancilla qubits
+
+        # Storing all results for later sifting and analysis
+        self.all_alice_bits = []
+        self.all_alice_bases = []
+        self.all_bob_bits = []
+        self.all_bob_bases = []
+        self.all_eve_bits = [] # Eve's measurement on her ancilla
+
+        # Sifted keys for final analysis
+        self.sifted_alice_key = []
+        self.sifted_bob_key = []
+        self.sifted_eve_key = []
+
+        self.simulator = cirq.Simulator()
+        # Optimal theta for Economical Cloner, derived from maximizing Eve's info/disturbing Alice&Bob optimally
+        self.theta = np.arccos(1 / np.sqrt(3)) / 2
+
+        # Metrics (initialized)
+        self.qber = 0
+        self.eve_error_rate = 0
+        self.secret_key_rate = 0
+
+    def _prepare_qubit(self, bit: int, basis: str, qubit: cirq.Qid) -> cirq.Circuit:
+        """Helper to prepare a single qubit (Alice's side)."""
+        circuit = cirq.Circuit()
+        # Qubit starts in |0> by default.
+        if bit == 1:
+            circuit.append(cirq.X(qubit)) # Apply X if bit is 1 (to get |1>)
+        if basis == 'X':
+            circuit.append(cirq.H(qubit)) # Apply H for X-basis
+        return circuit
+
+    def _apply_economical_cloner(self, circuit: cirq.Circuit, data_q: cirq.Qid, ancilla_q: cirq.Qid) -> None:
+        """
+        Applies the Economical Cloner (Eve's attack) to a single data qubit and Eve's ancilla.
+        The data_q is the control, ancilla_q is the target.
+        """
+        # Core Cloning Operations:
+        # 1. Controlled-Ry(2*theta): If data_q is |1>, rotate ancilla_q by 2*theta around Y-axis.
+        circuit.append(cirq.ry(2 * self.theta).on(ancilla_q).controlled_by(data_q))
+
+        # 2. Anti-controlled CNOT (or Controlled-X with control_values=[0]):
+        # If data_q is |0>, apply X gate to ancilla_q.
+        circuit.append(cirq.X.on(ancilla_q).controlled_by(data_q, control_values=[0]))
+
+    def _measure_qubit_in_basis(self, circuit: cirq.Circuit, qubit: cirq.Qid, basis: str, key: str) -> None:
+        """Helper to measure a single qubit in Z or X basis (Bob's/Eve's measurement)."""
+        if basis == 'X':
+            circuit.append(cirq.H(qubit)) # Rotate to Z-basis for measurement
+        circuit.append(cirq.measure(qubit, key=key)) # Measure in Z-basis
+
+    def run_simulation(self):
+        """Runs the full BB84 protocol simulation with Economical Cloner attack."""
+        print(f"Starting BB84 simulation with Economical Cloner for {self.num_sent_qubits} qubits...")
+
+        for i in range(self.num_sent_qubits):
+            current_data_q = self.qubits[i]
+            current_eve_q = self.eve_qubits[i] # Each eve_qubit is unique for each data_q
+
+            # Alice's actions (prepare bit and basis)
+            alice_bit = random.choice([0, 1])
+            alice_basis = random.choice(['Z', 'X'])
+            self.all_alice_bits.append(alice_bit)
+            self.all_alice_bases.append(alice_basis)
+
+            # Bob's chosen measurement basis
+            bob_basis = random.choice(['Z', 'X'])
+            self.all_bob_bases.append(bob_basis)
+
+            # --- Build the circuit for this single qubit transmission (one round) ---
+            # This 'round_circuit' represents the path of a single qubit from Alice, through Eve, to Bob.
+            round_circuit = cirq.Circuit()
+
+            # 1. Alice prepares her qubit (current_data_q)
+            round_circuit.append(self._prepare_qubit(alice_bit, alice_basis, current_data_q))
+
+            # 2. Eve applies her Economical Cloner
+            # The cloner interacts with current_data_q (Alice's bit) and current_eve_q (Eve's ancilla).
+            # After the cloner, current_data_q is Bob's received qubit, and current_eve_q is Eve's copy.
+            self._apply_economical_cloner(round_circuit, current_data_q, current_eve_q)
+
+            # 3. Bob measures the qubit he receives (current_data_q)
+            self._measure_qubit_in_basis(round_circuit, current_data_q, bob_basis, key='bob_m')
+
+            # 4. Eve measures her ancilla (current_eve_q)
+            # Eve measures her ancilla in Alice's basis (assuming she learns it during sifting).
+            self._measure_qubit_in_basis(round_circuit, current_eve_q, alice_basis, key='eve_m')
+
+            # --- Run the simulation for this single round ---
+            # We run it with repetitions=1 as we are doing this for each qubit individually.
+            result = self.simulator.run(round_circuit, repetitions=1)
+
+            # Store results for sifting later
+            self.all_bob_bits.append(result.measurements['bob_m'][0][0])
+            self.all_eve_bits.append(result.measurements['eve_m'][0][0])
+
+        print("Simulation complete. Sifting keys...")
+        self.sift_keys()
+        self.calculate_metrics()
+
+    def sift_keys(self):
+        """Sifts the keys to keep only those with matching bases between Alice and Bob."""
+        for i in range(self.num_sent_qubits):
+            if self.all_alice_bases[i] == self.all_bob_bases[i]:
+                self.sifted_alice_key.append(self.all_alice_bits[i])
+                self.sifted_bob_key.append(self.all_bob_bits[i])
+                self.sifted_eve_key.append(self.all_eve_bits[i]) # Eve's measurement for sifted key
+
+    def calculate_metrics(self):
+        """Calculates QBER, Eve's Error Rate, and Secret Key Rate."""
+        num_sifted = len(self.sifted_alice_key)
+
+        if num_sifted == 0:
+            print("No sifted keys generated. Cannot calculate metrics.")
+            return
+
+        # Calculate QBER (Alice vs Bob): Error rate between Alice's and Bob's sifted keys
+        qber_errors = sum(1 for a, b in zip(self.sifted_alice_key, self.sifted_bob_key) if a != b)
+        self.qber = qber_errors / num_sifted
+
+        # Calculate Eve's Error Rate (Alice vs Eve): Error rate between Alice's original bit and Eve's clone's measurement
+        eve_errors = sum(1 for a, e in zip(self.sifted_alice_key, self.sifted_eve_key) if a != e)
+        self.eve_error_rate = eve_errors / num_sifted
+
+        # Calculate Secret Key Rate K = H(QE) - H(Q)
+        H_Q = self._calculate_h_entropy(self.qber)
+        H_QE = self._calculate_h_entropy(self.eve_error_rate)
+        self.secret_key_rate = H_QE - H_Q
+
+        print("\n--- Simulation Results ---")
+        print(f"Number of sent qubits: {self.num_sent_qubits}")
+        print(f"Number of sifted keys: {num_sifted}")
+        print(f"QBER (Alice vs Bob): {self.qber:.4f}")
+        print(f"Eve's Error Rate (Alice vs Eve): {self.eve_error_rate:.4f}")
+        print(f"Secret Key Rate (K = H(QE) - H(Q)): {self.secret_key_rate:.4f} bits/sifted-photon")
+
+    def _calculate_h_entropy(self, prob: float) -> float:
+        """Calculates binary Shannon entropy H(p)."""
+        if prob <= 0 or prob >= 1: # Handle edge cases for log2(0) and log2(1)
+            return 0.0
+        return -prob * np.log2(prob) - (1 - prob) * np.log2(1 - prob)
+
+    def print_theoretical_values(self):
+        """Prints theoretical expected values for optimal individual attack on BB84."""
+        Q_theoretical = 0.25 # Optimal QBER for Alice-Bob in BB84 with an individual attack
+        
+        # For the optimal cloning, Eve's error rate (QE) is given by:
+        # P_error = 0.5 - 1/(2*sqrt(2)) which is approx 0.1464
+        QE_theoretical = 0.5 - 1/(2*np.sqrt(2))
+        
+        # Calculate theoretical key rate
+        H_Q_theoretical = self._calculate_h_entropy(Q_theoretical)
+        H_QE_theoretical = self._calculate_h_entropy(QE_theoretical)
+        K_theoretical = H_QE_theoretical - H_Q_theoretical
+
+        print("\n--- Theoretical Expected Values for Optimal Individual Attack (BB84) ---")
+        print(f"Theoretical QBER (Q): {Q_theoretical:.4f}")
+        print(f"Theoretical Eve's Error Rate (QE): {QE_theoretical:.4f}")
+        print(f"Theoretical Key Rate (K = H(QE) - H(Q)): {K_theoretical:.4f}")
+
+# --- Run the simulation ---
+if __name__ == "__main__":
+    protocol = BB84_ClonerAttack(num_sent_qubits=1000) # Use a large number of qubits for better statistics
+    protocol.run_simulation()
+    protocol.print_theoretical_values()
