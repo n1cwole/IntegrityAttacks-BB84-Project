@@ -19,7 +19,7 @@ from hybrid_adaptive_eve import HybridAdaptiveEve
 from baselines import PNSOnlyEve, FixedCNOTEve
 from hybrid_physics import expected_qber, expected_eve_info
 
-N_ROUNDS = 2000
+N_ROUNDS = 500
 SEEDS = [1, 2, 3]
 
 
