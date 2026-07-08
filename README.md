@@ -16,68 +16,21 @@ CNOT Probe: Using an auxiliary qubit and a CNOT gate to entangle Eve's system wi
 
 CZ Probe: Utilizing Controlled-Z gates to induce phase-shift errors for information extraction.
 
-### Prerequisites
-
-- Python 3.11+
-- pip
-
-### Installation
-
-```bash
-git clone https://github.com/n1cwole/IntegrityAttacks-BB84-Project.git
-cd IntegrityAttacks-BB84-Project
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-```
-
-### Project Structure
-
-```
-├── original_simulations/       # Reference implementations used in the research paper
-│   ├── CNOT_Probe_Attack.py    # CNOT/CZ probe attacks + Intercept-Resend
-│   └── PNS_Attacks.py          # Photon Number Splitting attack
-├── src/                        # Modified hybrid attack models (active development)
-│   ├── hybrid_physics.py       # Closed-form CRy physics model
-│   ├── hybrid_adaptive_eve.py  # Hybrid adaptive Eve (PNS + CRy optimization)
-│   ├── baselines.py            # PNS-only and fixed-CNOT baseline Eve models
-│   ├── evasive_hybrid_eve.py   # Evasive Eve with basis-symmetrized noise injection
-│   ├── run_sweeps.py           # Parameter sweep framework
-│   └── make_figures.py         # Paper figure generation
-├── requirements.txt
-└── README.md
-```
-
-### Running the Simulations
-
-**Original simulations (reference):**
-```bash
-cd original_simulations
-python3 CNOT_Probe_Attack.py    # CNOT and CZ probe attacks + Intercept-Resend
-python3 PNS_Attacks.py          # Photon Number Splitting attack
-```
-
-**Hybrid/adaptive Eve models:**
-```bash
-cd src
-python3 hybrid_adaptive_eve.py  # Hybrid adaptive attack with CRy optimization
-python3 evasive_hybrid_eve.py   # Evasive Eve with basis-symmetrized noise injection
-```
-
-**Parameter sweeps and figure generation:**
-```bash
-cd src
-python3 run_sweeps.py           # Run experimental sweeps (outputs sweep_results.json)
-python3 make_figures.py         # Generate paper figures (outputs to outputs/figures/)
-```
-
 ### Tech Stack
 
-- **Language:** Python 3.11
-- **Quantum simulation:** Cirq
-- **Numerical computing:** NumPy, SciPy
-- **Visualization:** Matplotlib
-- **Documentation:** LaTeX
+#### Python 3.11
+
+#### Libraries utilized: 
+
+NumPy
+
+Cirq
+
+Matplotlib
+
+#### Documentation: 
+
+LaTeX
 
 ### Key Findings:
 PNS Attack (Most Critical): Exploited multi-photon pulses to extract key bits with $0\%$ QBER disturbance. This confirms that hardware-level vulnerabilities are the most significant threat to "unconditional" security.

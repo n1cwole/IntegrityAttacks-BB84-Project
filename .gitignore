@@ -1,6 +1,7 @@
+
+
 __pycache__/
-*.pyc
 outputs/
+*.pyc
 sweep_results.json
 venv/
-.venv/
