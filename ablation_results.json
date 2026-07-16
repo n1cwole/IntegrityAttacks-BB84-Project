@@ -1,0 +1,58 @@
+[
+  {
+    "label": "Full-stack (all components)",
+    "qber_mean": 0.05926797703855132,
+    "qber_std": 0.006155445941455595,
+    "acc_mean": 0.6527981894882746,
+    "acc_std": 0.01236297384216651,
+    "theta": NaN
+  },
+  {
+    "label": "Remove depolarization (L=0)",
+    "qber_mean": 0.06267349305790186,
+    "qber_std": 0.004655828876847748,
+    "acc_mean": 0.6161458691374159,
+    "acc_std": 0.015256534570121777,
+    "theta": NaN
+  },
+  {
+    "label": "Remove memory loss (F_mem=1)",
+    "qber_mean": 0.06243280980263304,
+    "qber_std": 0.005816042367281455,
+    "acc_mean": 0.6389999844570962,
+    "acc_std": 0.016407349891177984,
+    "theta": NaN
+  },
+  {
+    "label": "Remove QND noise (F_qnd=1)",
+    "qber_mean": 0.06273494021612606,
+    "qber_std": 0.004969320215878811,
+    "acc_mean": 0.6311264608884901,
+    "acc_std": 0.013045480937455209,
+    "theta": NaN
+  },
+  {
+    "label": "Remove symmetrization",
+    "qber_mean": 0.06356172358984853,
+    "qber_std": 0.005044110580579304,
+    "acc_mean": 0.6434404156720231,
+    "acc_std": 0.009966054476759944,
+    "theta": NaN
+  },
+  {
+    "label": "Remove optimizer (Fixed-CNOT)",
+    "qber_mean": 0.2553565627216913,
+    "qber_std": 0.014137365856076379,
+    "acc_mean": 0.7402375136484299,
+    "acc_std": 0.013340144345348278,
+    "theta": NaN
+  },
+  {
+    "label": "Remove probe (PNS-only)",
+    "qber_mean": 0.006045432767779907,
+    "qber_std": 0.002860091019925228,
+    "acc_mean": 0.5628556642940358,
+    "acc_std": 0.006977311447614563,
+    "theta": NaN
+  }
+]
