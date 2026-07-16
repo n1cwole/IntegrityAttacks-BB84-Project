@@ -1,7 +1,29 @@
-
-
 __pycache__/
-outputs/
 *.pyc
-sweep_results.json
 venv/
+.venv/
+
+# generated figures
+figures/
+outputs/
+
+# generated JSON result files
+sweep_results.json
+sweep_results_v2.json
+depol_results.json
+boundary_results.json
+boundary_corrected.json
+fqnd_isolated.json
+countermeasure_results.json
+decomp_results.json
+skr_results.json
+dw_skr_results.json
+ablation_results.json
+lambda_sensitivity.json
+convergence_results.json
+
+# macOS
+.DS_Store
+
+# VSCode
+*.code-workspace
